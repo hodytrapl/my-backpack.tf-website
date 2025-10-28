@@ -1,0 +1,13 @@
+:root {
+            --primary-color: #4a6572;
+            --secondary-color: #344955;
+            --accent-color: #f9aa33;
+            --background-color: #232f34;
+            --text-color: #ffffff;
+            --disabled-color: #5d6d7e;
+            --border-color: #566573;
+            --craftable-border: solid 2px #27ae60;
+            --non-craftable-border: dashed 2px #e74c3c;
+            --tradable-bg: rgba(52, 73, 85, 0.7);
+            --non-tradable-bg: rgba(231, 76, 60, 0.3);
+        }

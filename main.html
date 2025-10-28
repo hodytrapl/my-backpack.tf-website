@@ -9,9 +9,9 @@
 <body>
 
     <div class="container">
-        <h1>TF2 Inventory Viewer</h1>
+        <h1>steamID64 Finder</h1>
         <input type="text" id="steamIdInput" placeholder="SteamID64" value="76561199068122777">
-        <button onclick="displayInventory()">Load Inventory</button>
+        <button onclick="getTF2Items('76561199068122777')">Load Inventory</button>
         <div id="loading" style="display: none;">Loading...</div>
         <div id="error" style="color: red; display: none;"></div>
     </div>

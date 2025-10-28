@@ -9,6 +9,13 @@
 <body>
 
     <div class="container">
+        <h1>TF2 Inventory Viewer</h1>
+        <input type="text" id="steamIdInput" placeholder="SteamID64" value="76561199068122777">
+        <button onclick="displayInventory()">Load Inventory</button>
+        <div id="loading" style="display: none;">Loading...</div>
+        <div id="error" style="color: red; display: none;"></div>
+    </div>
+    <div class="container">
         <header>
             <h1>TF2 Inventory Manager</h1>
             <p>Управление вашей коллекцией предметов Team Fortress 2</p>
@@ -44,14 +51,13 @@
             </div>
         </div>
 
-        <div class="items-container" id="items-container">
+        <div class="inventory-container" id="inventoryContainer">
             <!-- Динамически заполняется через JS -->
         </div>
     </div>
 
 <script src="assets/js/reset.js"></script>
 <script src="assets/js/main.js"></script>
-<script src="assets/js/bbcodeConventor.js"></script>
 
 </body>
 </html>

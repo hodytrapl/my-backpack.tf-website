@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBCode to HTML Converter</title>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #6b8cbc;
+            --accent-color: #ff7e5f;
+            --light-color: #f5f7fa;
+            --dark-color: #2c3e50;
+            --success-color: #2ecc71;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--dark-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .editor, .preview {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .editor-header, .preview-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .editor-header h3, .preview-header h3 {
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        
+        .editor-content {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #bbcodeInput {
+            width: 100%;
+            height: 400px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            transition: var(--transition);
+        }
+        
+        #bbcodeInput:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+        }
+        
+        .convert-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            align-self: flex-start;
+        }
+        
+        .convert-btn:hover {
+            background-color: #ff6b4a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(255, 126, 95, 0.3);
+        }
+        
+        .convert-btn:active {
+            transform: translateY(0);
+        }
+        
+        .preview-content {
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 500px;
+            border: 1px solid #eee;
+            border-radius: var(--border-radius);
+            background-color: var(--light-color);
+        }
+        
+        /* Стили для HTML preview */
+        #preview {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        #preview strong {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        #preview u {
+            text-decoration: underline;
+            color: var(--secondary-color);
+        }
+        
+        #preview ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        #preview li {
+            margin-bottom: 5px;
+            padding-left: 5px;
+        }
+        
+        #preview li strong {
+            color: var(--dark-color);
+        }
+        
+        /* Информационная панель */
+        .info-panel {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .info-panel h2 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .info-panel p {
+            margin-bottom: 10px;
+        }
+        
+        .bbcode-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .bbcode-example {
+            background-color: var(--light-color);
+            padding: 10px;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+        }
+        
+        .bbcode-example code {
+            background-color: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Футер */
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: var(--dark-color);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+    </style>
+<body>
+
+    <div class="container">
+        <div class="editor">
+            <h3>BBCode Input</h3>
+            <textarea id="bbcodeInput" placeholder="Введите BBCode здесь...">
+[b][u]Unique[/u][/b]
+
+[list]
+[*][b]Scrap Metal[/b] (0.11 ref)
+[*][b]Scrap Metal[/b] (0.11 ref)
+[*][b]Reclaimed Metal[/b] (0.33 ref)
+[*][b]Reclaimed Metal[/b] (0.33 ref)
+[*][b]Reclaimed Metal[/b] (0.33 ref)
+[*][b]Reclaimed Metal[/b] (0.33 ref)
+[*][b]Refined Metal[/b] ($0.028–$0.03)
+[*][b]Non-Tradable Refined Metal[/b]
+[*][b]Spectral Stash Case #149[/b] (0.44–1 ref)
+[*][b]Spectral Stash Case #149[/b] (0.44–1 ref)
+[*][b]Scream Fortress XVI War Paint Case #146[/b] (0.05–0.11 ref)
+[*][b]Non-Craftable Non-Tradable Strange Unique Soul Gargoyle[/b]
+[*][b]Pristine Robot Brainstorm Bulb[/b] (2.44–2.55 ref)
+[*][b]Reinforced Robot Emotion Detector[/b] (0.05–0.11 ref)
+[*][b]Non-Tradable Reinforced Robot Humor Suppression Pump[/b] (0.05–0.11 ref)
+[*][b]Reinforced Robot Humor Suppression Pump[/b] (0.05–0.11 ref)
+[*][b]Reinforced Robot Humor Suppression Pump[/b] (0.05–0.11 ref)
+[*][b]Non-Tradable Reinforced Robot Humor Suppression Pump[/b] (0.05–0.11 ref)
+[*][b]Reinforced Robot Bomb Stabilizer[/b] (0.05–0.11 ref)
+[*][b]Battle-Worn Robot Taunt Processor[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot Taunt Processor[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot Taunt Processor[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot KB-808[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot KB-808[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot KB-808[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot KB-808[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot KB-808[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot KB-808[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot Money Furnace[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot Money Furnace[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot Money Furnace[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot Money Furnace[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot Money Furnace[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot Money Furnace[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot Money Furnace[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot Money Furnace[/b] (0.88–1.11 ref)
+[*][b]Battle-Worn Robot Money Furnace[/b] (0.88–1.11 ref)
+[*][b]'Decorated War Hero' War Paint
+Civilian Grade Keyless Case #111[/b] (1.33–1.44 ref)
+[*][b]'Contract Campaigner' War Paint
+Civilian Grade Keyless Case #114[/b] (8–8.88 ref)
+[*][b]Specialized Killstreak Holiday Punch Kit Fabricator[/b]
+[*][b]Specialized Killstreak Air Strike Kit Fabricator[/b]
+[*][b]Summer 2025 Cosmetic Case #148[/b] (0.11–0.22 ref)
+[*][b]Summer 2025 Cosmetic Case #148[/b] (0.11–0.22 ref)
+[*][b]Summer 2025 Cosmetic Case #148[/b] (0.11–0.22 ref)
+[*][b]Summer 2025 Cosmetic Case #148[/b] (0.11–0.22 ref)
+[*][b]Summer 2025 Cosmetic Case #148[/b] (0.11–0.22 ref)
+[*][b]Summer 2025 Cosmetic Case #148[/b] (0.11–0.22 ref)
+[*][b]Winter 2023 Cosmetic Case #143[/b] (0.05–0.11 ref)
+[*][b]Non-Tradable Bombinomicon[/b]
+[*][b]Non-Tradable Frontline Field Recorder[/b]
+[*][b]Non-Tradable Ghostly Gibus[/b]
+[*][b]Ellis' Cap[/b] (1.33–1.44 ref)
+[*][b]Non-Tradable Mercenary[/b]
+[*][b]Non-Tradable MONOCULUS![/b]
+[*][b]Non-Tradable Mildly Disturbing Halloween Mask[/b]
+[*][b]Non-Tradable Horseless Headless Horsemann's Head[/b]
+[*][b]Non-Tradable Engineer Mask[/b]
+[*][b]Non-Tradable Soldier Mask[/b]
+[*][b]Non-Tradable Spy Mask[/b]
+[*][b]Non-Tradable Skull Island Topper[/b]
+[*][b]Non-Tradable Professor Speks[/b]
+[*][b]Non-Tradable Cryptic Keepsake[/b]
+[*][b]Non-Tradable Dark Helm[/b]
+[*][b]Non-Tradable Beacon from Beyond[/b]
+[*][b]Non-Tradable Haunted Hat[/b]
+[*][b]Non-Tradable Accursed Apparition[/b]
+[*][b]Non-Tradable Proof of Purchase[/b]
+[*][b]Non-Craftable Non-Tradable Mann Co. Cap[/b]
+[*][b]The Monstrous Memento[/b] (1.33–1.44 ref)
+[*][b]Non-Tradable Operation Two Cities Badge[/b]
+[*][b]Non-Tradable Alien Swarm Parasite[/b]
+[*][b]Non-Tradable Pyrovision Goggles[/b]
+[*][b]The Saxton[/b] (1.33–1.66 ref)
+[*][b]Non-Tradable Spiral Sallet[/b]
+[*][b]The Hardy Laurel[/b] (4–4.33 ref)
+[*][b]Non-Craftable Non-Tradable Strange Unique Jungle Inferno ConTracker[/b]
+[*][b]Non-Tradable Fancy Spellbook[/b]
+[*][b]Noise Maker - Winter Holiday[/b] (0.05–0.11 ref)
+[*][b]Non-Tradable Power Up Canteen[/b]
+[*][b]Non-Tradable Taunt: The Director's Vision[/b]
+[*][b]The Soda Popper[/b] (0.05 ref)
+[*][b]Baby Face's Blaster[/b] (0.05 ref)
+[*][b]Mad Milk[/b] (0.05 ref)
+[*][b]The Flying Guillotine[/b] (0.05 ref)
+[*][b]Bonk! Atomic Punch[/b] (0.05 ref)
+[*][b]Bonk! Atomic Punch[/b] (0.05 ref)
+[*][b]Crit-a-Cola[/b] (0.05 ref)
+[*][b]Crit-a-Cola[/b] (0.05 ref)
+[*][b]Pretty Boy's Pocket Pistol[/b] (0.05 ref)
+[*][b]The Winger[/b] (0.05 ref)
+[*][b]The Atomizer[/b] (0.05 ref)
+[*][b]The Wrap Assassin[/b] (0.05 ref)
+[*][b]Non-Tradable Bat Outta Hell[/b]
+[*][b]The Boston Basher[/b] (0.05 ref)
+[*][b]The Candy Cane[/b] (0.05 ref)
+[*][b]The Conscientious Objector[/b] (2.66–3.55 ref)
+[*][b]Non-Tradable Fan O'War[/b]
+[*][b]The Ham Shank[/b] (0.11–0.44 ref)
+[*][b]The Ham Shank[/b] (0.11–0.44 ref)
+[*][b]The Holy Mackerel[/b] (0.05 ref)
+[*][b]The Holy Mackerel[/b] (0.05 ref)
+[*][b]Unarmed Combat[/b] (0.33–0.88 ref)
+[*][b]Non-Tradable Sandman[/b]
+[*][b]The Sandman[/b] (0.05 ref)
+[*][b]The Frying Pan[/b] (1.55–2.77 ref)
+[*][b]Non-Tradable Necro Smasher[/b]
+[*][b]Non-Tradable Face Plante[/b]
+[*][b]Non-Tradable Horrific Head of Hare[/b]
+[*][b]Non-Tradable Halloweiner[/b]
+[*][b]Non-Tradable Baphomet Trotters[/b]
+[*][b]Non-Tradable Faun Feet[/b]
+[*][b]Non-Tradable B-Ankh![/b]
+[*][b]Non-Tradable Voodoo-Cursed Scout Soul[/b]
+[*][b]Non-Tradable Macho Mann[/b]
+[*][b]Non-Tradable Fowl Fists[/b]
+[*][b]Non-Tradable Nugget Noggin[/b]
+[*][b]The Bazaar Bargain[/b] (0.05 ref)
+[*][b]The Classic[/b] (0.05 ref)
+[*][b]The AWPer Hand[/b] (3.88–4.33 ref)
+[*][b]The Hitman's Heatmaker[/b] (0.05 ref)
+[*][b]The Sydney Sleeper[/b] (0.05 ref)
+[*][b]The Sydney Sleeper[/b] (0.05 ref)
+[*][b]Non-Tradable Huntsman[/b]
+[*][b]The Huntsman[/b] (0.05 ref)
+[*][b]The Huntsman[/b] (0.05 ref)
+[*][b]The Cozy Camper[/b] (0.05 ref)
+[*][b]Darwin's Danger Shield[/b] (0.05 ref)
+[*][b]Darwin's Danger Shield[/b] (0.05 ref)
+[*][b]Non-Tradable Jarate[/b]
+[*][b]Non-Tradable Razorback[/b]
+[*][b]The Razorback[/b] (0.05 ref)
+[*][b]The Bushwacka[/b] (0.05 ref)
+[*][b]The Bushwacka[/b] (0.05 ref)
+[*][b]The Tribalman's Shiv[/b] (0.05 ref)
+[*][b]Non-Tradable Silver Bullets[/b]
+[*][b]Non-Craftable Non-Tradable Roo Rippers[/b]
+[*][b]Non-Craftable Non-Tradable Mr. Mundee's Wild Ride[/b]
+[*][b]Non-Tradable Sir Hootsalot[/b]
+[*][b]The Cow Mangler 5000[/b] (0.05 ref)
+[*][b]The Beggar's Bazooka[/b] (0.05 ref)
+[*][b]The Liberty Launcher[/b] (0.05 ref)
+[*][b]The Original[/b] (0.05 ref)
+[*][b]The Original[/b] (0.05 ref)
+[*][b]Non-Tradable Direct Hit[/b]
+[*][b]The Air Strike[/b] (0.05 ref)
+[*][b]The Mantreads[/b] (0.05 ref)
+[*][b]The Reserve Shooter[/b] (0.05 ref)
+[*][b]The Righteous Bison[/b] (0.05 ref)
+[*][b]The Concheror[/b] (0.05 ref)
+[*][b]The Battalion's Backup[/b] (0.05 ref)
+[*][b]The Buff Banner[/b] (0.05 ref)
+[*][b]Non-Tradable Buff Banner[/b]
+[*][b]The Gunboats[/b] (0.05 ref)
+[*][b]The Gunboats[/b] (0.05 ref)
+[*][b]The B.A.S.E. Jumper[/b] (0.05 ref)
+[*][b]The B.A.S.E. Jumper[/b] (0.05 ref)
+[*][b]The Market Gardener[/b] (0.05 ref)
+[*][b]Non-Tradable Equalizer[/b]
+[*][b]The Pain Train[/b] (0.05 ref)
+[*][b]The Escape Plan[/b] (0.05 ref)
+[*][b]The Escape Plan[/b] (0.05 ref)
+[*][b]Non-Tradable Spellbinder's Bonnet[/b]
+[*][b]Non-Tradable Idiot Box[/b]
+[*][b]Non-Tradable Shoestring Budget[/b]
+[*][b]Ali Baba's Wee Booties[/b] (0.05 ref)
+[*][b]Ali Baba's Wee Booties[/b] (0.05 ref)
+[*][b]The Loch-n-Load[/b] (0.05 ref)
+[*][b]The Splendid Screen[/b] (0.05 ref)
+[*][b]The Tide Turner[/b] (0.05 ref)
+[*][b]Non-Tradable Chargin' Targe[/b]
+[*][b]The Scottish Resistance[/b] (0.05 ref)
+[*][b]The Scottish Resistance[/b] (0.05 ref)
+[*][b]The Scottish Resistance[/b] (0.05 ref)
+[*][b]The Claidheamh Mòr[/b] (0.05 ref)
+[*][b]The Ullapool Caber[/b] (0.05 ref)
+[*][b]Non-Tradable Eyelander[/b]
+[*][b]The Eyelander[/b] (0.05 ref)
+[*][b]Glengarry Bonnet[/b] (1.33–1.66 ref)
+[*][b]Non-Tradable Hair of the Dog[/b]
+[*][b]Non-Tradable Pickled Paws[/b]
+[*][b]Non-Tradable Pickled Paws[/b]
+[*][b]The Sub Zero Suit[/b] (13.11–15 ref)
+[*][b]Crusader's Crossbow[/b] (0.05 ref)
+[*][b]Crusader's Crossbow[/b] (0.05 ref)
+[*][b]The Overdose[/b] (0.05 ref)
+[*][b]Non-Tradable Blutsauger[/b]
+[*][b]Syringe Gun[/b] (1.33 ref)
+[*][b]The Kritzkrieg[/b] (0.05 ref)
+[*][b]Non-Tradable Kritzkrieg[/b]
+[*][b]The Quick-Fix[/b] (0.11–0.33 ref)
+[*][b]The Vaccinator[/b] (0.88–1.11 ref)
+[*][b]The Amputator[/b] (0.05 ref)
+[*][b]The Solemn Vow[/b] (0.05 ref)
+[*][b]The Übersaw[/b] (0.05 ref)
+[*][b]The Vita-Saw[/b] (0.05 ref)
+[*][b]Coldfront Commander[/b] (28–33.55 ref)
+[*][b]Non-Tradable Lo-Grav Loafers[/b]
+[*][b]Non-Tradable Shaman's Skull[/b]
+[*][b]Clinical Investigator[/b] (10.11–14.11 ref)
+[*][b]The Brass Beast[/b] (0.05 ref)
+[*][b]The Huo-Long Heater[/b] (0.05 ref)
+[*][b]Tomislav[/b] (0.05 ref)
+[*][b]Natascha[/b] (0.05 ref)
+[*][b]Natascha[/b] (0.05 ref)
+[*][b]The Buffalo Steak Sandvich[/b] (0.05 ref)
+[*][b]The Family Business[/b] (0.05 ref)
+[*][b]Non-Tradable Sandvich[/b]
+[*][b]The Second Banana[/b] (0.05 ref)
+[*][b]The Dalokohs Bar[/b] (0.05 ref)
+[*][b]The Dalokohs Bar[/b] (0.05 ref)
+[*][b]The Eviction Notice[/b] (0.05 ref)
+[*][b]The Fists of Steel[/b] (0.05 ref)
+[*][b]The Holiday Punch[/b] (0.05 ref)
+[*][b]The Killing Gloves of Boxing[/b] (0.05 ref)
+[*][b]The Warrior's Spirit[/b] (0.05 ref)
+[*][b]The Abominable Snow Pants[/b] (1.33–1.66 ref)
+[*][b]The Himalayan Hair Shirt[/b] (1.33–1.55 ref)
+[*][b]Non-Tradable Horned Honcho[/b]
+[*][b]Non-Tradable Ivan the Inedible[/b]
+[*][b]Non-Tradable Last Bite[/b]
+[*][b]The Kathman-Hairdo[/b] (1.33–1.66 ref)
+[*][b]Non-Tradable Trash Man[/b]
+[*][b]The Backburner[/b] (0.05 ref)
+[*][b]Non-Tradable Dragon's Fury[/b]
+[*][b]The Phlogistinator[/b] (0.05 ref)
+[*][b]Non-Tradable Gas Passer[/b]
+[*][b]The Manmelter[/b] (0.05 ref)
+[*][b]The Scorch Shot[/b] (0.05 ref)
+[*][b]The Thermal Thruster[/b] (0.05 ref)
+[*][b]Non-Tradable Thermal Thruster[/b]
+[*][b]Non-Tradable Flare Gun[/b]
+[*][b]Non-Tradable Flare Gun[/b]
+[*][b]Detonator[/b] (0.05 ref)
+[*][b]The Back Scratcher[/b] (0.05 ref)
+[*][b]The Lollichop[/b] (0.05 ref)
+[*][b]The Postal Pummeler[/b] (0.05 ref)
+[*][b]The Neon Annihilator[/b] (0.05 ref)
+[*][b]The Powerjack[/b] (0.05 ref)
+[*][b]Non-Tradable Axtinguisher[/b]
+[*][b]The Homewrecker[/b] (0.05 ref)
+[*][b]Deity's Dress[/b] (9–12.66 ref)
+[*][b]Non-Tradable Grisly Gumbo[/b]
+[*][b]Non-Tradable Vicious Visage[/b]
+[*][b]Non-Tradable Up Pyroscopes[/b]
+[*][b]Non-Tradable Up Pyroscopes[/b]
+[*][b]Non-Tradable Rugged Respirator[/b]
+[*][b]Non-Tradable Bozo's Bouffant[/b]
+[*][b]Non-Tradable Raven's Visage[/b]
+[*][b]Flavorful Baggies[/b] painted [color=#2f4f4f]A Color Similar to Slate[/color] (13.55–16.22 ref)
+[*][b]The Last Breath[/b] (7–8.77 ref)
+[*][b]Non-Tradable Tail from the Crypt[/b]
+[*][b]Non-Tradable Plutonidome[/b]
+[*][b]Non-Tradable Moccasin Machinery[/b]
+[*][b]Non-Tradable Wraith Wrap[/b]
+[*][b]The Diamondback[/b] (0.05 ref)
+[*][b]The Enforcer[/b] (0.05 ref)
+[*][b]The Enforcer[/b] (0.05 ref)
+[*][b]The Ambassador[/b] (0.05 ref)
+[*][b]The Big Earner[/b] (0.05 ref)
+[*][b]Killstreak Big Earner[/b]
+[*][b]Your Eternal Reward[/b] (0.05 ref)
+[*][b]Conniver's Kunai[/b] (0.05 ref)
+[*][b]The Spy-Cicle[/b] (0.05 ref)
+[*][b]Wanga Prick[/b] (0.22–0.44 ref)
+[*][b]The Red-Tape Recorder[/b] (0.05 ref)
+[*][b]The Red-Tape Recorder[/b] (0.05 ref)
+[*][b]Non-Tradable Cloak and Dagger[/b]
+[*][b]Non-Tradable Dead Ringer[/b]
+[*][b]Non-Tradable Bozo's Brogues[/b]
+[*][b]Non-Tradable Voodoo-Cursed Spy Soul[/b]
+[*][b]Non-Tradable Shadowman's Shade[/b]
+[*][b]The Widowmaker[/b] (0.05 ref)
+[*][b]The Widowmaker[/b] (0.05 ref)
+[*][b]Non-Tradable Frontier Justice[/b]
+[*][b]The Rescue Ranger[/b] (0.05 ref)
+[*][b]The Short Circuit[/b] (0.05 ref)
+[*][b]Non-Tradable Wrangler[/b]
+[*][b]The Jag[/b] (0.05 ref)
+[*][b]The Southern Hospitality[/b] (0.05 ref)
+[*][b]The Southern Hospitality[/b] (0.05 ref)
+[*][b]Non-Tradable Gunslinger[/b]
+[*][b]The Eureka Effect[/b] (0.05 ref)
+[*][b]The El Paso Poncho[/b] painted [color=#cf7336]Mann Co. Orange[/color] (15.88–16.77 ref)
+[*][b]Non-Tradable Buzz Killer[/b]
+[/list]
+
+[b][u]Decorated Weapon[/u][/b]
+
+[list]
+[*][b]Autumn Mk.II War Paint (Minimal Wear)[/b]
+[*][b]Non-Tradable Smissmas Sweater Black Box (Factory New)[/b]
+[*][b]Civic Duty Mk.II Loose Cannon (Minimal Wear)[/b]
+[*][b]Civic Duty Mk.II Claidheamh Mòr (Well-Worn)[/b]
+[/list]
+
+[b][u]Strange[/u][/b]
+
+[list]
+[*][b]Non-Tradable Strange Spirit of Giving[/b]
+[*][b]Strange Creepy Crawlers[/b] (5–8.88 ref)
+[*][b]Strange Silver Botkiller Medi Gun Mk.II[/b] (2.33–3.33 ref)
+[*][b]Strange Degreaser[/b] (7.44–10.66 ref)
+[*][b]Strange Silver Botkiller Wrench Mk.II[/b] (3–3.66 ref)
+[*][b]Strange El Mostacho[/b] (9.22–9.66 ref)
+[/list]
+
+[b][u]Haunted[/u][/b]
+
+[list]
+[*][b]Non-Craftable Non-Tradable Strange Haunted Ghost of Spies Checked Past[/b]
+[*][b]Non-Tradable Haunted Holy Hunter[/b]
+[*][b]Non-Tradable Haunted External Organ[/b]
+[*][b]Non-Tradable Haunted Frontier Flyboy[/b]
+[*][b]Non-Tradable Haunted Soul of 'Spensers Past[/b]
+[/list]
+
+[b][u]Genuine[/u][/b]
+
+[list]
+[*][b]Non-Tradable Genuine Galvanized Gauntlet Soldiers Spoils 2023[/b] painted [color=#bcddb3]A Mann's Mint[/color]
+[*][b]Non-Tradable Genuine Voltaic Violence Verdant Vexatious Vivianite of Vanity 2023[/b] painted [color=#e5d3e]#e5d3e[/color]
+[/list]
+
+[b][u]Unusual[/u][/b]
+
+[list]
+[*][b]Non-Tradable Unusual Horseless Headless Horsemann's Headtaker[/b]
+[/list]
+
+</textarea>
+            <button onclick="convertBBCode()">Конвертировать</button>
+        </div>
+        
+        <div class="preview">
+            <h3>HTML Preview</h3>
+            <div id="preview"></div>
+        </div>
+    </div>
+
+
+<script>function bbcodeToHtml(bbcode) {
+            let html = bbcode;
+            const replacements = [
+                [/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>'],
+                [/\[i\](.*?)\[\/i\]/gi, '<em>$1</em>'],
+                [/\[u\](.*?)\[\/u\]/gi, '<u>$1</u>'],
+                [/\[s\](.*?)\[\/s\]/gi, '<s>$1</s>'],
+                [/\[url\](.*?)\[\/url\]/gi, '<a href="$1">$1</a>'],
+                [/\[url=(.*?)\](.*?)\[\/url\]/gi, '<a href="$1">$2</a>'],
+                [/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="">'],
+                [/\[quote\](.*?)\[\/quote\]/gi, '<blockquote>$1</blockquote>'],
+                [/\[code\](.*?)\[\/code\]/gi, '<code>$1</code>'],
+                [/\[list\](.*?)\[\/list\]/gi, '<ul>$1</ul>'],
+                [/\[list=1\](.*?)\[\/list\]/gi, '<ol>$1</ol>'],
+                [/\[\*\](.*?)(?=\[\*\]|\[\/list\])/gi, '<li>$1</li>']
+            ];
+            
+            replacements.forEach(([pattern, replacement]) => {
+                html = html.replace(pattern, replacement);
+            });
+            
+            html = html.replace(/\n/g, '<br>');
+            return html;
+        }
+
+        function convertBBCode() {
+            const bbcode = document.getElementById('bbcodeInput').value;
+            const html = bbcodeToHtml(bbcode);
+            document.getElementById('preview').innerHTML = html;
+        }
+
+        // Автоматическая конвертация при загрузке
+        document.addEventListener('DOMContentLoaded', convertBBCode);</script>
+</body>
+</html>
